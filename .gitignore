@@ -25,6 +25,8 @@ __pycache__/
 #  before PyInstaller builds the exe, so as to inject date/other infos into it.
 *.manifest
 *.spec
+# Track our hand-crafted spec (not auto-generated)
+!grow_control.spec
 
 # Installer logs
 pip-log.txt
@@ -100,6 +102,9 @@ dmypy.json
 # Logs and databases
 *.log
 *.sqlite3
+
+# Runtime user settings (generated on first launch with defaults)
+settings.json
 
 # OS generated files
 .DS_Store
