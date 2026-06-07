@@ -1,5 +1,5 @@
 """
-CP-8 exe smoke test.
+CP-7 packaged exe smoke test.
 
 Launches dist/grow_control/grow_control.exe with MOCK_HARDWARE=true,
 waits a few seconds, checks the process is alive (no immediate crash),
@@ -44,7 +44,7 @@ def _info(msg: str) -> None:
 
 
 def main() -> None:
-    print('CP-8 exe smoke test')
+    print('CP-7 exe smoke test')
     print('=' * 45)
 
     if not EXE.exists():
@@ -60,6 +60,9 @@ def main() -> None:
         'MOCK_HARDWARE=true\n'
         'SERIAL_PORT=AUTODETECT\n'
         'SERIAL_BAUD=115200\n'
+        'PIN_FAN_RELAY=8\n'
+        'RELAY_ACTIVE_LOW=true\n'
+        'LED_HARDWARE_ENABLED=false\n'
         'TIMEZONE=Europe/Minsk\n'
     )
     ENV_FILE.write_text(mock_env_content, encoding='utf-8')
@@ -109,7 +112,7 @@ def main() -> None:
 
     print()
     print('=' * 45)
-    print('EXE smoke test PASSED - CP-8 complete.')
+    print('EXE smoke test PASSED - CP-7 complete.')
     print()
     print('For a real-hardware run, edit dist/grow_control/.env:')
     print('  MOCK_HARDWARE=false')

@@ -1,20 +1,15 @@
 """
-CP-7 real-hardware smoke test.
+Hardware smoke test (bench configuration).
 
 Prerequisites
 ─────────────
-1. grow_control.ino is flashed to Arduino Mega 2560 (Arduino IDE → Upload).
-2. DHT11 data wire → D4, 10 kΩ pull-up resistor between DATA and +5 V.
-3. Arduino connected via USB (driver installed; check Device Manager → Ports).
-4. .env has MOCK_HARDWARE=false (created by CP-7 setup).
+1. grow_control.ino flashed to Arduino Mega 2560.
+2. DHT11 DATA → D4, VCC → 3.3V, GND → GND.
+3. Relay IN → D8 (active LOW), fan via COM/NO + 9V.
+4. .env with MOCK_HARDWARE=false.
 
-Usage
-─────
+Usage:
     poetry run python _smoke_real_hw.py
-
-The test runs in two phases:
-  Phase 1 - raw pyserial: verifies handshake and JSON readings at the wire level.
-  Phase 2 - SerialBoard:  verifies the application's hardware abstraction layer.
 """
 
 from __future__ import annotations
@@ -178,9 +173,11 @@ def phase1_raw_serial(port: str) -> list[dict[str, object]]:
                 'Soil field "s" is still validated.'
             )
 
-        # ── no-op command round-trip ──────────────────────────────────────────
-        _info('Sending DOUT 7 0 (fan relay OFF — no-op if relay not wired)...')
-        ser.write(b'DOUT 7 0\n')
+        # ── fan relay safe-idle command (matches Controller._set_fan(False)) ──
+        off_val = 1 if settings.RELAY_ACTIVE_LOW else 0
+        cmd = f'DOUT {settings.PIN_FAN_RELAY} {off_val}'
+        _info(f'Sending {cmd} (fan relay idle)...')
+        ser.write(f'{cmd}\n'.encode())
         ser.flush()
         time.sleep(0.1)
         _ok('Command sent without serial error')
@@ -242,7 +239,7 @@ async def phase2_serial_board() -> SensorReading | None:
 def main() -> None:
     setup_logging()
 
-    print('CP-7 real-hardware smoke test')
+    print('Hardware smoke test')
     print('=' * 45)
     print(f'MOCK_HARDWARE  = {settings.MOCK_HARDWARE}')
     print(f'SERIAL_PORT    = {settings.SERIAL_PORT}')
@@ -280,7 +277,7 @@ def main() -> None:
 
     print()
     print('=' * 45)
-    print('ALL PHASES PASSED - CP-7 complete.')
+    print('ALL PHASES PASSED.')
     print()
     print('Next step: launch the full GUI app:')
     print('  poetry run python -m app')
