@@ -19,6 +19,7 @@ class SettingsPanel(QGroupBox):
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__('Settings', parent)
+        self._led_manual_override: bool | None = None
         self._setup_ui()
 
     def _setup_ui(self) -> None:
@@ -70,6 +71,7 @@ class SettingsPanel(QGroupBox):
         layout.addRow(self._apply_btn)
 
     def populate(self, s: RuntimeSettings) -> None:
+        self._led_manual_override = s.led_manual_override
         self._temp_spin.setValue(s.temp_threshold)
         self._temp_hyst_spin.setValue(s.temp_hysteresis)
         self._soil_spin.setValue(s.soil_threshold_pct)
@@ -96,5 +98,18 @@ class SettingsPanel(QGroupBox):
             soil_hysteresis_pct=self._soil_hyst_spin.value(),
             led_on_time=f'{on_t.hour():02d}:{on_t.minute():02d}',
             led_off_time=f'{off_t.hour():02d}:{off_t.minute():02d}',
+            led_manual_override=self._led_manual_override,
         )
         self.settings_applied.emit(new_settings)  # type: ignore[attr-defined]
+
+    def set_controls_enabled(self, enabled: bool) -> None:
+        for widget in (
+            self._temp_spin,
+            self._temp_hyst_spin,
+            self._soil_spin,
+            self._soil_hyst_spin,
+            self._led_on_edit,
+            self._led_off_edit,
+            self._apply_btn,
+        ):
+            widget.setEnabled(enabled)

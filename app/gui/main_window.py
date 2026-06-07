@@ -41,6 +41,7 @@ class MainWindow(QMainWindow):
         self._setup_ui()
         self._connect_signals()
         self._apply_initial_settings()
+        self._set_controls_connected(False)
 
     # ------------------------------------------------------------------ UI --
 
@@ -116,7 +117,12 @@ class MainWindow(QMainWindow):
         s = self._runtime_settings
         self._sensor_panel.set_thresholds(s.temp_threshold, s.soil_threshold_pct)
         self._led_panel.update_schedule(s.led_on_time, s.led_off_time)
+        self._led_panel.sync_override(s.led_manual_override)
         self._settings_panel.populate(s)
+
+    def _set_controls_connected(self, connected: bool) -> None:
+        self._settings_panel.set_controls_enabled(connected)
+        self._led_panel.set_controls_enabled(connected)
 
     # ------------------------------------------------------- Qt overrides --
 
@@ -168,6 +174,7 @@ class MainWindow(QMainWindow):
             self._log_toggle_btn.setText('Show Logs')
 
     def _on_connection_changed(self, connected: bool) -> None:
+        self._set_controls_connected(connected)
         if connected:
             self.statusBar().showMessage('Connected')
         else:
@@ -190,6 +197,7 @@ class MainWindow(QMainWindow):
     def _on_settings_applied(self, new_settings: object) -> None:
         if not isinstance(new_settings, RuntimeSettings):
             return
+        new_settings.led_manual_override = self._store.load().led_manual_override
         self._store.save(new_settings)
         self._runtime_settings = new_settings
         self._ctrl.reload_settings()
@@ -199,5 +207,6 @@ class MainWindow(QMainWindow):
         self._led_panel.update_schedule(
             new_settings.led_on_time, new_settings.led_off_time
         )
+        self._settings_panel.populate(new_settings)
         self.statusBar().showMessage('Settings saved.', 3000)
         _logger.info('Runtime settings updated from GUI')

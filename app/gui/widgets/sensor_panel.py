@@ -52,6 +52,11 @@ class SensorPanel(QGroupBox):
         self._soil_thresh_lbl = QLabel('Threshold: -- %')
         grid.addWidget(self._soil_thresh_lbl, 2, 1)
 
+        self._soil_raw_lbl = QLabel('Raw ADC: --')
+        self._soil_raw_lbl.setStyleSheet('font-size: 11px; color: #7f8c8d;')
+        self._soil_raw_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        grid.addWidget(self._soil_raw_lbl, 3, 1)
+
     def set_thresholds(self, temp: float, soil: float) -> None:
         self._temp_threshold = temp
         self._soil_threshold = soil
@@ -71,6 +76,8 @@ class SensorPanel(QGroupBox):
             self._soil_value.setStyleSheet(
                 _S_ALERT_LOW if s < self._soil_threshold else _S_NORMAL
             )
+        if reading.humidity_soil_raw is not None:
+            self._soil_raw_lbl.setText(f'Raw ADC: {reading.humidity_soil_raw}')
         if reading.humidity_air is not None:
             self._hum_value.setText(f'{reading.humidity_air:.1f} %')
             self._hum_value.setStyleSheet(_S_NORMAL)
@@ -79,3 +86,4 @@ class SensorPanel(QGroupBox):
         for lbl in (self._temp_value, self._soil_value, self._hum_value):
             lbl.setText('--')
             lbl.setStyleSheet(_S_NA)
+        self._soil_raw_lbl.setText('Raw ADC: --')

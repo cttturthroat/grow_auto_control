@@ -34,7 +34,12 @@ class LedPanel(QGroupBox):
     def __init__(
         self, ctrl: Controller, cfg: Settings, parent: QWidget | None = None
     ) -> None:
-        super().__init__('LED Schedule', parent)
+        title = (
+            'LED Schedule (simulated)'
+            if not cfg.LED_HARDWARE_ENABLED
+            else 'LED Schedule'
+        )
+        super().__init__(title, parent)
         self._ctrl = ctrl
         self._scheduler = LedScheduler(cfg.TIMEZONE)
         self._on_time_str = '20:15'
@@ -97,6 +102,17 @@ class LedPanel(QGroupBox):
         self._set_override_ui(None)
 
     # ----------------------------------------------------------- public API --
+
+    def set_controls_enabled(self, enabled: bool) -> None:
+        self._force_on_btn.setEnabled(enabled)
+        self._force_off_btn.setEnabled(enabled)
+        if enabled and self._override_label.text():
+            self._auto_btn.setEnabled(True)
+        elif not enabled:
+            self._auto_btn.setEnabled(False)
+
+    def sync_override(self, override: bool | None) -> None:
+        self._set_override_ui(override)
 
     def update_schedule(self, on_time: str, off_time: str) -> None:
         self._on_time_str = on_time
