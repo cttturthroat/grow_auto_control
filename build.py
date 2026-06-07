@@ -30,13 +30,19 @@ def main() -> None:
         print(f'PyInstaller failed with exit code {result.returncode}')
         sys.exit(result.returncode)
 
-    src = DIST / '_internal' / '.env.example'
-    dst = DIST / '.env.example'
-    if src.exists():
-        shutil.copy2(src, dst)
-        print(f'Copied .env.example -> {dst}')
-    else:
-        print(f'WARNING: {src} not found — .env.example not copied to dist root.')
+    candidates = [
+        Path('.env.example'),
+        DIST / '_internal' / '.env.example',
+    ]
+    copied = False
+    for src in candidates:
+        if src.exists():
+            shutil.copy2(src, DIST / '.env.example')
+            print(f'Copied {src} -> {DIST / ".env.example"}')
+            copied = True
+            break
+    if not copied:
+        print('WARNING: .env.example not found — not copied to dist root.')
 
     print()
     print('Build finished.')
