@@ -148,6 +148,7 @@ class SerialBoard:
         if self._serial is not None:
             with contextlib.suppress(Exception):
                 self._serial.close()
+            self._serial = None
         with self._lock:
             self._latest = None
 
