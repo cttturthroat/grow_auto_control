@@ -29,19 +29,21 @@ def _exe_dir() -> Path:
 def setup_logging() -> None:
     logger.remove()
 
-    logger.add(
-        sys.stderr,
-        format=(
-            '<green>{time:YYYY-MM-DD HH:mm:ss}</green> | '
-            '<level>{level: <8}</level> | '
-            '<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - '
-            '<level>{message}</level>'
-        ),
-        level=settings.LOG_LEVEL,
-        colorize=True,
-        backtrace=True,
-        diagnose=True,
-    )
+    # PyInstaller windowed builds (console=False) set sys.stderr to None.
+    if sys.stderr is not None:
+        logger.add(
+            sys.stderr,
+            format=(
+                '<green>{time:YYYY-MM-DD HH:mm:ss}</green> | '
+                '<level>{level: <8}</level> | '
+                '<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - '
+                '<level>{message}</level>'
+            ),
+            level=settings.LOG_LEVEL,
+            colorize=True,
+            backtrace=True,
+            diagnose=True,
+        )
 
     if _is_frozen():
         log_path = _exe_dir() / 'grow_control.log'
