@@ -24,117 +24,107 @@ The Servo library ships with the IDE — no additional installation needed.
 1. Connect the Arduino Mega 2560 via USB.
 2. **Tools → Board → Arduino AVR Boards → Arduino Mega or Mega 2560**
 3. **Tools → Processor → ATmega2560**
-4. **Tools → Port** → select the COM port that appeared after plugging in the board
-   (check Device Manager if unsure — it lists as "USB Serial Device (COMx)").
+4. **Tools → Port** → select the COM port (e.g. COM4, CH340).
+
+Close Serial Monitor and any Python app using the port before uploading.
 
 ---
 
 ## 4. Open and Upload the Sketch
 
-1. **File → Open…** → navigate to `arduino/grow_control/grow_control.ino`
-2. Click the **Upload** button (→ arrow).
-3. Wait for "Done uploading."
-4. Open **Tools → Serial Monitor**, set baud rate to **115 200**.
-   You should see `GROW_CTRL_READY` within 2–3 seconds, followed by JSON lines.
+1. **File → Open…** → `arduino/grow_control/grow_control.ino`
+2. Click **Upload**.
+3. Open **Tools → Serial Monitor**, baud **115 200**.
+4. Confirm `GROW_CTRL_READY` and JSON lines every ~2 s.
 
 ---
 
-## 5. Wiring Diagram
+## 5. Bench Wiring (Mega 2560)
 
-All voltages are 5 V from the Arduino unless otherwise noted.
-
-### DHT11 (already connected)
+### DHT11
 
 ```
 DHT11           Mega 2560
 ------          ---------
-VCC      →      5V
+VCC      →      3.3V
 GND      →      GND
-DATA     →      D4   (+ 10 kΩ pull-up resistor between DATA and 5V)
+DATA     →      D4   (+ 10 kΩ pull-up to 3.3V if bare sensor)
 ```
 
-### YL-69 Soil Moisture Sensor
+### YL-69 soil moisture
 
 ```
 YL-69           Mega 2560
 -----           ---------
 VCC      →      5V
 GND      →      GND
-AO       →      A1   (analog out — lower = wetter)
-DO       →      (leave unconnected)
+AO       →      A1
+DO       →      (not connected)
 ```
 
-> **Calibration** — after wiring, measure `soilRaw` in your JSON output:
-> - Dip the probe in water → note the value → set `SOIL_ADC_WET` in `.env`
-> - Hold the probe in dry air → note the value → set `SOIL_ADC_DRY` in `.env`
+Calibrate `SOIL_ADC_WET` / `SOIL_ADC_DRY` in `.env` after installing the probe in substrate.
 
-### Fan + Relay Module (5 V trigger, active HIGH)
+### Fan relay (JQC3F-05VDC-C, active LOW)
 
 ```
 Relay module    Mega 2560
 ------------    ---------
 VCC      →      5V
 GND      →      GND
-IN       →      D7
+IN       →      D8          LOW = relay ON, HIGH = relay OFF
 ```
 
-Connect the fan between the relay's **NO** (Normally Open) and **COM** terminals.
-Power the fan from an appropriate external supply (12 V / 5 V depending on your fan).
+Relay power terminals (Chinese labels):
 
-### Micro Servo
+| Label | Meaning | Connect |
+|-------|---------|---------|
+| 公共 | COM | 9V (+) |
+| 常开 | NO | Fan (+) |
+| 常闭 | NC | (unused) |
+
+```
+9V (+) ── COM
+NO ────── Fan (+)
+Fan (−) ── 9V GND  (common with Arduino GND)
+```
+
+Bench uses a **9V battery** on a **12V-rated fan** (lower speed, acceptable for demo).
+
+### Continuous-rotation servo (360°)
 
 ```
 Servo           Mega 2560
 -----           ---------
 VCC (red)  →   5V
-GND (black) →  GND
-Signal (orange/white) → D9
+GND        →   GND
+Signal     →   D9
+
+90 = stop, 0 = spin CW (irrigation open in software)
 ```
 
-> Note: if you drive multiple servos or a large servo, use an external 5 V supply
-> for VCC and connect only GND and signal to the Mega.
+Use a separate 5V supply for the servo if USB power is unstable (share GND with Mega).
 
-### RGB LED (common cathode)
+### LED (future)
 
-Each colour pin goes through a **220 Ω resistor**.
-
-```
-LED pin         Resistor        Mega 2560
--------         --------        ---------
-R anode    →   220 Ω      →    D2
-G anode    →   220 Ω      →    D3
-B anode    →   220 Ω      →    D5
-Common (-)  ←──────────────────GND
-```
-
-**Common anode LED**: wire the common (+) pin to 5V; colour pins to resistors then
-to D2/D3/D5 as above. Set `LED_COMMON_ANODE=true` in `.env`.
-
-> **Why pins 2, 3, 5?**
-> The Servo library on Mega uses Timer 1 internally, disabling `analogWrite` on
-> pins 11 and 12. Pins 2, 3, 5 use Timer 3 — unaffected by the Servo library.
+Reserved wire on **D7** + **220 Ω** resistor (not connected in current bench build).  
+LED schedule runs in the **GUI only** (`LED_HARDWARE_ENABLED=false`).
 
 ---
 
-## 6. Environment variables (`.env`)
+## 6. `.env` (project root)
 
-Copy `.env.example` to `.env` in the project root and verify these values match
-your wiring:
+Copy `.env.example` → `.env`. Key values for this bench:
 
 ```ini
 MOCK_HARDWARE=false
-SERIAL_PORT=AUTODETECT    # or e.g. COM5
-SERIAL_BAUD=115200
-PIN_DHT=4
-PIN_SOIL_ANALOG=1
-PIN_FAN_RELAY=7
+SERIAL_PORT=AUTODETECT
+PIN_FAN_RELAY=8
+RELAY_ACTIVE_LOW=true
 PIN_SERVO=9
-PIN_LED_R=2
-PIN_LED_G=3
-PIN_LED_B=5
-LED_COMMON_ANODE=false
-SOIL_ADC_WET=300          # update after calibration
-SOIL_ADC_DRY=900          # update after calibration
+SERVO_STOP_ANGLE=90
+SERVO_OPEN_ANGLE=0
+LED_HARDWARE_ENABLED=false
+PIN_LED_FUTURE=7
 ```
 
 ---
@@ -145,5 +135,4 @@ SOIL_ADC_DRY=900          # update after calibration
 poetry run python -m app
 ```
 
-The app connects automatically (serial port auto-detected by USB device descriptor).
-The status bar shows **Connected** within a few seconds of launch.
+Status bar shows **Connected** when the handshake succeeds. Do not unplug USB during normal operation; if you do, the app reconnects and re-applies fan/servo logic automatically.
